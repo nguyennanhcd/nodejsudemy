@@ -2,7 +2,7 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
-const mongoConnect = require('./util/database').mongoConnect;
+const mongoose = require('mongoose');
 const User = require('./models/user');
 
 app.set('view engine', 'ejs');
@@ -17,9 +17,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // when you run npm start, nodejs only run the code generator but not the middleware
 app.use((req, res, next) => {
-  User.findById('669f5c4288385f216bc27a82')
+  User.findById('66a0dd978500e84f78c8b4cd')
     .then((user) => {
-      req.user = new User(user.name, user.email, user.cart, user._id);
+      req.user = user;
       next();
     })
     .catch((error) => {
@@ -32,7 +32,24 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect(() => {
-  console.log('Server is running on port 3000...');
-  app.listen(3000);
-});
+mongoose
+  .connect(
+    'mongodb+srv://levektor74:Zxcvbnm123@cluster0.csfs5va.mongodb.net/shop?retryWrites=true&w=majority&appName=Cluster0'
+  )
+  .then((result) => {
+    User.findOne().then((user) => {
+      if (!user) {
+        const user = new User({
+          name: 'Max',
+          email: 'test@test.com',
+          cart: {
+            items: [],
+          },
+        });
+        user.save();
+      }
+    });
+    console.log('Connected to MongoDB');
+    app.listen(3000);
+  })
+  .catch((error) => console.log(error));
